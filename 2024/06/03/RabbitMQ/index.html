@@ -27,7 +27,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://wenjelly-blog-1325426290.cos.ap-guangzhou.myqcloud.com/post_img%2FRabbitMQ-Logo.wine.png">
 <meta property="article:published_time" content="2024-06-03T13:18:55.000Z">
-<meta property="article:modified_time" content="2024-06-03T13:53:01.454Z">
+<meta property="article:modified_time" content="2024-06-06T01:52:03.869Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="RabbitMQ">
@@ -239,7 +239,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          71 字
+          3k 字
         
       </span>
     
@@ -250,7 +250,7 @@
         
         
         
-          1 分钟
+          25 分钟
         
       </span>
     
@@ -292,7 +292,7 @@
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-06-03T21:53:01+08:00
+                    本文最后更新于 2024-06-06T09:52:03+08:00
                   
                   
 
@@ -302,13 +302,170 @@
             
               <div class="markdown-body">
                 
-                <h1 id="Java-API-操作手册"><a href="#Java-API-操作手册" class="headerlink" title="Java API 操作手册"></a>Java API 操作手册</h1><h2 id="“Hello-World”"><a href="#“Hello-World”" class="headerlink" title="“Hello World”"></a>“Hello World”</h2><p><strong>一、下载RabbitMQ</strong></p>
+                <h1 id="Java-API-操作手册"><a href="#Java-API-操作手册" class="headerlink" title="Java API 操作手册"></a>Java API 操作手册</h1><p>介绍一下RabbitMQ的几个端口：</p>
+<table>
+<thead>
+<tr>
+<th align="center">端口</th>
+<th align="center">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">15672</td>
+<td align="center">管理界面ui使用的端口</td>
+</tr>
+<tr>
+<td align="center">15671</td>
+<td align="center">管理监听端口</td>
+</tr>
+<tr>
+<td align="center">5672，5671</td>
+<td align="center">AMQP 0-9-1 without and with TLSclient端通信口</td>
+</tr>
+<tr>
+<td align="center">4369</td>
+<td align="center">（epmd)epmd代表 Erlang端口映射守护进程，erlang发现口</td>
+</tr>
+<tr>
+<td align="center">25672</td>
+<td align="center">( Erlang distribution） server间内部通信口</td>
+</tr>
+</tbody></table>
+<h2 id="“Hello-World”"><a href="#“Hello-World”" class="headerlink" title="“Hello World”"></a>“Hello World”</h2><p><strong>一、下载RabbitMQ</strong></p>
+<p>这里介绍的是Windows环境下的安装，有很多种安装方式，具体可以看官方文档</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.rabbitmq.com/docs/download">Installing RabbitMQ | RabbitMQ</a></p>
+</blockquote>
+<p>首先需要安装Erlang&#x2F;OTP，其次就是安装RabbitMQ了</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.rabbitmq.com/docs/install-windows#installer">RabbitMQ：一个代理将它们全部排队 |兔子MQ</a></p>
+</blockquote>
+<p>但是需要注意版本兼容问题，安装完之后就可以了，RabbitMQ是自启动的</p>
 <p><strong>二、导入RabbitMQ依赖</strong></p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-comment">&lt;!-- https://mvnrepository.com/artifact/com.rabbitmq/amqp-client --&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.rabbitmq<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>amqp-client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>5.21.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
 
 <p><strong>三、发送端（生产者）</strong></p>
+<p>编写发送端的代码，向消息队列发送 “Hello World”</p>
+<p>发送端的统一流程：</p>
+<ol>
+<li>创建连接工厂</li>
+<li>设置连接地址</li>
+<li>创建连接</li>
+<li>创建通道</li>
+<li>声明队列</li>
+<li>发送消息到队列</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">QUEUE_NAME</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-comment">// 创建连接工厂</span><br>        <span class="hljs-type">ConnectionFactory</span> <span class="hljs-variable">factory</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ConnectionFactory</span>();<br>        <span class="hljs-comment">// 设置连接地址</span><br>        factory.setHost(<span class="hljs-string">&quot;localhost&quot;</span>);<br>        <span class="hljs-comment">// 创建连接</span><br>        <span class="hljs-keyword">try</span> (<span class="hljs-type">Connection</span> <span class="hljs-variable">connection</span> <span class="hljs-operator">=</span> factory.newConnection();<br>             <span class="hljs-comment">// 创建通道</span><br>             <span class="hljs-type">Channel</span> <span class="hljs-variable">channel</span> <span class="hljs-operator">=</span> connection.createChannel()) &#123;<br>            <span class="hljs-comment">// 声明一个队列</span><br>            channel.queueDeclare(QUEUE_NAME, <span class="hljs-literal">false</span>, <span class="hljs-literal">false</span>, <span class="hljs-literal">false</span>, <span class="hljs-literal">null</span>);<br>            <span class="hljs-comment">// 发送信息</span><br>            <span class="hljs-type">String</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Hello World&quot;</span>;<br>            <span class="hljs-comment">// 发送信息到消息队列上</span><br>            <span class="hljs-comment">// 参数：1.交换机 2.队列名称 3. 4.消息内容</span><br>            channel.basicPublish(<span class="hljs-string">&quot;&quot;</span>, QUEUE_NAME, <span class="hljs-literal">null</span>, message.getBytes());<br>            System.out.println(<span class="hljs-string">&quot; [x] Sent &#x27;&quot;</span> + message + <span class="hljs-string">&quot;&#x27;&quot;</span>);<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            e.printStackTrace();<br>        &#125;<br>    &#125;<br></code></pre></td></tr></table></figure>
+
 <p><strong>四、接收端（消费者）</strong></p>
-<p><img src="/.com//post_background-1.jpg" srcset="/img/loading.gif" lazyload alt="post_background-1"></p>
+<p>对于接收端来说，我们也同样需要声明一个与发送端相同；我们需要创建一个连接和通道 <code>channel</code>，声明接收端使用的队列，<strong>需要与发送端队列匹配</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">QUEUE_NAME</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;hello&quot;</span>;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception &#123;<br>        <span class="hljs-type">ConnectionFactory</span> <span class="hljs-variable">factory</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ConnectionFactory</span>();<br>        factory.setHost(<span class="hljs-string">&quot;localhost&quot;</span>);<br>        <span class="hljs-type">Connection</span> <span class="hljs-variable">connection</span> <span class="hljs-operator">=</span> factory.newConnection();<br>        <span class="hljs-type">Channel</span> <span class="hljs-variable">channel</span> <span class="hljs-operator">=</span> connection.createChannel();<br><br>        channel.queueDeclare(QUEUE_NAME, <span class="hljs-literal">false</span>, <span class="hljs-literal">false</span>, <span class="hljs-literal">false</span>, <span class="hljs-literal">null</span>);<br>        System.out.println(<span class="hljs-string">&quot; [*] Waiting for messages. To exit press CTRL+C&quot;</span>);<br><br>        <span class="hljs-type">DeliverCallback</span> <span class="hljs-variable">deliverCallback</span> <span class="hljs-operator">=</span> (consumerTag, delivery) -&gt; &#123;<br>            <span class="hljs-type">String</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(delivery.getBody(), <span class="hljs-string">&quot;UTF-8&quot;</span>);<br>            System.out.println(<span class="hljs-string">&quot; [x] Received &#x27;&quot;</span> + message + <span class="hljs-string">&quot;&#x27;&quot;</span>);<br>        &#125;;<br>        channel.basicConsume(QUEUE_NAME, <span class="hljs-literal">true</span>, deliverCallback, consumerTag -&gt; &#123;<br>        &#125;);<br>    &#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>为什么不把通道<code>channel</code>和连接的创建与关闭放在<code>try-with-resource</code>中？</strong></p>
+<p>官方文档是这样解释的：</p>
+<blockquote>
+<p>因为 我们希望在消费者倾听的同时，这个过程仍然有效 异步地让消息到达</p>
+</blockquote>
+<p>在发送端和接收端中，都需要编写重复的创建连接代码，这里可以进行简化，将这些代码抽取出来，创建一个连接管理类，用于返回创建好的连接</p>
+<h2 id="RabbitMQ的几种模式"><a href="#RabbitMQ的几种模式" class="headerlink" title="RabbitMQ的几种模式"></a>RabbitMQ的几种模式</h2><p><strong>一、 Work Queues 工作模式</strong></p>
+<p>当有多个消费者时，对于消息队列里面的内容，消费者之间的是竞争关系，即每个消费竞争消息队列里面的内容</p>
+<p><strong>二、 Publish&#x2F;Subscribe 发布订阅模式</strong></p>
+<p>交换机采用广播的方式将消息分发到所有队列</p>
+<p><strong>三、 Routin 路由模式</strong></p>
+<p>根据具体的路由键进行匹配转发</p>
+<p><strong>四 、Topics 主题模式</strong></p>
+<p>使用通配符进行路由转发</p>
+<h2 id="Spring-Boot-配置-RabbitMQ"><a href="#Spring-Boot-配置-RabbitMQ" class="headerlink" title="Spring Boot 配置 RabbitMQ"></a>Spring Boot 配置 RabbitMQ</h2><p><strong>一、Spring Boot 整合 RabbitMQ 依赖</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-amqp<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>二、编写配置文件</strong></p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">spring:</span><br>	<span class="hljs-attr">rabbitmq:</span><br>		<span class="hljs-attr">host:</span><br>		<span class="hljs-attr">port:</span> <span class="hljs-number">5672</span><br>		<span class="hljs-attr">username:</span> <span class="hljs-string">guest</span><br>		<span class="hljs-attr">password:</span> <span class="hljs-string">guest</span><br>		<span class="hljs-attr">virtual-host:</span> <span class="hljs-string">/</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>三、编写监听类（消费者）</strong></p>
+<p>如果 服务器上没有对应的交换机和队列的话，就需要这么些注解</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">MessageListener</span> &#123;<br>	<br>	<span class="hljs-comment">// 定义交换机常量</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">EXCHANGE_DIRECT</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;exchange.direct.order&quot;</span>;<br>	<span class="hljs-comment">// 定义路由键</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">ROUTING_KEY</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;order&quot;</span>;<br>	<span class="hljs-comment">// 定义队列名称</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">QUEUE_NAME</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;queue.order&quot;</span>;<br>	<br>	<span class="hljs-comment">// 通过注解来进行监听（监听+ 创建）</span><br>	<span class="hljs-meta">@RabbitListener(bindings = @QueueBinding(</span><br><span class="hljs-meta">		// 监听的队列名称，durable是否持久化</span><br><span class="hljs-meta">		value = @Queue(value = QUEUE_NAME,durable = &quot;true&quot;)</span><br><span class="hljs-meta">		// 交换机名称</span><br><span class="hljs-meta">		exchange = @Exchange(value = EXCHANGE_NAME)</span><br><span class="hljs-meta">		// 路由规则</span><br><span class="hljs-meta">		key = &#123;ROUTING_KEY&#125;</span><br><span class="hljs-meta">		)</span><br><span class="hljs-meta">	)</span><br>	<span class="hljs-comment">// 三个参数：信息内容、信息体、通道</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doMessage</span><span class="hljs-params">(String dataMessage, Message message, Channel channel)</span> &#123;<br>		.....业务逻辑<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>如果 服务器 上有对应的交换机和队列，则可以直接这样写注解</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 表示只监听</span><br><span class="hljs-meta">@RabbitListener(queues = &#123;QUEUE_NAME&#125;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doMessage</span><span class="hljs-params">(String dataMessage, Message message, Channel channel)</span> &#123;<br>	...<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>编写发送端（生产者）</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 引入Bean</span><br><span class="hljs-meta">@Autowired</span><br><span class="hljs-keyword">private</span> RabbitTemplate rabbitTemplate;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doMessage</span><span class="hljs-params">()</span> &#123;<br>	rebbitTemplate.convertAndSend(EXCHANGE_DIRECT,ROUTING_KEY,dateMassge);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="RabbitMQ-可靠性研究"><a href="#RabbitMQ-可靠性研究" class="headerlink" title="RabbitMQ 可靠性研究 *"></a>RabbitMQ 可靠性研究 *</h2><p>研究以下故障情况</p>
+<h3 id="一、消息没有发送到消息队列或交换机"><a href="#一、消息没有发送到消息队列或交换机" class="headerlink" title="一、消息没有发送到消息队列或交换机"></a>一、消息没有发送到消息队列或交换机</h3><h4 id="解决方式一：应答方式"><a href="#解决方式一：应答方式" class="headerlink" title="解决方式一：应答方式"></a>解决方式一：应答方式</h4><p>通过应答方式进行确认，有点类似于TCP的三次握手</p>
+<p>当生产者调用了<code>convertAndSend</code>方法发送消息时，回调用<code>ConfirmCallback</code>和<code>ReturnsCallback</code>接口的回调函数<code>confirm</code>和<code>returnedMessage</code>方法</p>
+<p><code>confirm</code>用于交换机应答</p>
+<p><code>returnedMessage</code>用于队列应答，但是只有当消息发送到队列失败时，才会调用这个函数</p>
+<p><strong>编写配置类</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RabbitConfig</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ConfirmCallback</span>,ReturnsCallback &#123;<br>	<span class="hljs-meta">@Override</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">confirm</span><span class="hljs-params">(CorrelationData correlationData, <span class="hljs-type">boolean</span> ack, String cause)</span> &#123;<br>		log.info(<span class="hljs-string">&quot;CorrelationData &quot;</span> + correlationData);<br>		log.info(<span class="hljs-string">&quot;交换机是否接收到消息： &quot;</span> + ack);<br>		log.info(<span class="hljs-string">&quot;错误信息： &quot;</span> + cause);<br>	&#125;<br>	<span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">returnedMessage</span><span class="hljs-params">(ReturnedMessage returned)</span> &#123;<br>        log.info(<span class="hljs-string">&quot;消息主体:&quot;</span> + <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(returned.getMessage().getBody()));<br>        log.info(<span class="hljs-string">&quot;应答码:&quot;</span> + returned.getReplyCode());<br>        log.info(<span class="hljs-string">&quot;描述:&quot;</span> + returned.getReplyText());<br>        log.info(<span class="hljs-string">&quot;消息使用的交换器 exchange : &quot;</span> + returned.getExchange());<br>        log.info(<span class="hljs-string">&quot;消息使用的路由键 routing : &quot;</span> + returned.getRoutingKey());<br>    &#125;<br>&#125;	<br></code></pre></td></tr></table></figure>
+
+<p>编写完配置类还不够，还需要将这个配置类装配到<code>RabbitTemplate</code>类里面，所以还需要编写一个方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Autowired</span><br><span class="hljs-keyword">private</span> RabbitTemplate rabbitTemplate;<br><span class="hljs-comment">// 加了这个注解就可以当这个类有对象创建的时候自动执行</span><br><span class="hljs-comment">// 由于 RabbitConfig 加了 @Configuration 注解，所以Spring Boot 在启动的时候会自动创建bean</span><br><span class="hljs-meta">@PostConstruct</span>     <br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">initRabbitTemplate</span><span class="hljs-params">()</span> &#123;<br>	rabbitTemplate.setConfirmCallback(<span class="hljs-built_in">this</span>);<br>	rabbitTemplate.setReturnsCallback(<span class="hljs-built_in">this</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="解决方式二：备份交换机"><a href="#解决方式二：备份交换机" class="headerlink" title="解决方式二：备份交换机"></a>解决方式二：备份交换机</h4><p>场景：如果交换机故障了，就可以使用备用交换机进行接收</p>
+<h3 id="二、如果消息队列服务器宕机导致内存消息丢失怎么办"><a href="#二、如果消息队列服务器宕机导致内存消息丢失怎么办" class="headerlink" title="二、如果消息队列服务器宕机导致内存消息丢失怎么办"></a>二、如果消息队列服务器宕机导致内存消息丢失怎么办</h3><p>消息默认持久化到硬盘上，重启后会从硬盘上读取原来的消息</p>
+<h3 id="三、消费端宕机或抛异常导致消息没有成功被消费"><a href="#三、消费端宕机或抛异常导致消息没有成功被消费" class="headerlink" title="三、消费端宕机或抛异常导致消息没有成功被消费"></a>三、消费端宕机或抛异常导致消息没有成功被消费</h3><p>通过应答方式进行确认：</p>
+<p>如果消费端消费信息成功，给服务器返回ACK信息，消息队列删除消息</p>
+<p>如果消费端消息信息失败，给服务器返回NACK信息，同时把消息恢复成待消费状态</p>
+<p><strong>一、先添加配置信息</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span><br>	<span class="hljs-attr">rabbit:</span><br>		<span class="hljs-attr">listener:</span><br>			<span class="hljs-attr">simple:</span><br>				<span class="hljs-attr">acknowledge-mode:</span> <span class="hljs-string">manual</span> <span class="hljs-comment"># 手动确认,默认的是不管消费成功或消费不成功都返回ACK</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>二、在业务逻辑里面手动应答（消费端）</strong></p>
+<p>一些参数：</p>
+<p><code>deliveryTag</code>：交付标签机制，相当于消息在队列里的id，由64位组成，相当于8字节</p>
+<p><code>multiple</code>：当为true时，对前面的消息进行批量处理，为false时，单独执行这一条消息，一般为false</p>
+<p><code>requeue</code>: 控制消息是否重新放回队列</p>
+<p>首先先用<code>try-catch</code>包围执行消息队列的业务逻辑，然后手动应答</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 表示只监听</span><br><span class="hljs-meta">@RabbitListener(queues = &#123;QUEUE_NAME&#125;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doMessage</span><span class="hljs-params">(String dataMessage, Message message, Channel channel)</span> &#123;<br>    <br>    <span class="hljs-comment">// 获取当前消息的deliverTag</span><br>    <span class="hljs-type">long</span> <span class="hljs-variable">deliveryTag</span> <span class="hljs-operator">=</span> message.getMessageProperties().getDeliveryTag();<br>	<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 执行业务逻辑</span><br>        ....<br>        <span class="hljs-comment">// 执行成功，应答ack</span><br>        channel.basicAck(deliveryTag,multiple);<br>    &#125; <span class="hljs-keyword">catch</span> (Exception e)&#123;<br>        <span class="hljs-comment">// 获取当前消息是否是第一次发送</span><br>        <span class="hljs-type">Boolean</span> <span class="hljs-variable">redelivered</span> <span class="hljs-operator">=</span> message.getMessageProperties().getRedelivered();<br>        <br>        <span class="hljs-keyword">if</span> (redelivered) &#123;<br>			<span class="hljs-comment">// 说明第一次放回，可以放回队列</span><br>            <span class="hljs-comment">// 失败返回nack</span><br>        	channel.basicNack(deliveryTag,multiple,<span class="hljs-literal">true</span>);<br>        &#125;<span class="hljs-keyword">else</span> &#123;<br>            <span class="hljs-comment">// 不放回队列，因为不是第一次放回队列了</span><br>            channel.basicNack(deliveryTag,multiple,<span class="hljs-literal">false</span>);<br>        &#125;<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(e);<br>    &#125;<br>    <br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="RabbitMQ-限流"><a href="#RabbitMQ-限流" class="headerlink" title="RabbitMQ 限流 *"></a>RabbitMQ 限流 *</h2><p>配置参数学习：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span><br>	<span class="hljs-attr">rabbit:</span><br>		<span class="hljs-attr">listener:</span><br>			<span class="hljs-attr">simple:</span><br>				<span class="hljs-attr">acknowledge-mode:</span> <span class="hljs-string">manual</span> <span class="hljs-comment"># 手动确认,默认的是不管消费成功或消费不成功都返回ACK</span><br>				<span class="hljs-attr">prefetch:</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 每次从队列中取回消息的数量</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="RabbitMQ-消息超时"><a href="#RabbitMQ-消息超时" class="headerlink" title="RabbitMQ 消息超时 *"></a>RabbitMQ 消息超时 *</h2><p>当一个消息一直在队列里面，消息可能会堆积，从而造成服务器存储空间耗尽</p>
+<p><strong>为此，需要给消息设置一个超时时间，超过这个时间未被取走的消息则会被删除</strong></p>
+<p>可以从俩个方面进行设置：</p>
+<p>一：设置队列过期时间，并不是过期之后把整个队列删除，而是加入到这个队列里面的消息都统一过期时间</p>
+<p>二：设置单条消息的过期时间</p>
+<p><strong>关于设置队列整体过期时间，可以在图形化界面设置</strong></p>
+<p><strong>设置单条过期时间可以通过API设置（生产端）</strong></p>
+<p>在消息后置处理器里面设置过期时间</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 创建消息后置处理器</span><br><span class="hljs-type">MessagePostProcessor</span> <span class="hljs-variable">messagePostProcessor</span> <span class="hljs-operator">=</span> message -&gt; &#123;<br>	<span class="hljs-comment">// 设置过期时间，单位毫秒，并且是String类型</span><br>	message.getMessageProperties().setExpiration(<span class="hljs-string">&quot;7000&quot;</span>);<br>	<span class="hljs-keyword">return</span> message;<br>&#125;<br>rabbitTemplate.converAndSend(<span class="hljs-string">&quot;交换机名称&quot;</span>,<span class="hljs-string">&quot;队列路由&quot;</span>,<span class="hljs-string">&quot;消息体&quot;</span>);<br><br></code></pre></td></tr></table></figure>
+
+<h2 id="RabbitMQ-死信"><a href="#RabbitMQ-死信" class="headerlink" title="RabbitMQ 死信 *"></a>RabbitMQ 死信 *</h2><p>消息超时后会变成死信，死信的产生大概有以下三种：</p>
+<ol>
+<li>拒绝：消费端拒绝消费该消息&#x2F;无法消费该消息，当消费端返回nack并且不把消息放回队列时，就会产生死信</li>
+<li>溢出：队列中消息的数量达到上限，再向队列发送消息便成了死信</li>
+<li>超时：消息到达超时时间未被消费</li>
+</ol>
+<p>死信的处理方式：</p>
+<ol>
+<li>丢弃：对于不重要的消息直接丢弃，不做处理</li>
+<li>入库：把死信写入数据库，日后处理</li>
+<li>监听：消息变成死信后进入死信队列，设置专门的消费端监听死信队列，做后续处理（常用）</li>
+</ol>
+<p><strong>正常队列要绑定对应的死信队列，在图形化页面进行绑定</strong></p>
+<h2 id="RabbitMQ-延迟队列"><a href="#RabbitMQ-延迟队列" class="headerlink" title="RabbitMQ 延迟队列 *"></a>RabbitMQ 延迟队列 *</h2><p>所谓的延迟队列就是在延迟时间后才进行处理</p>
+<p><strong>方法一：借助消息超时时间 + 死信队列</strong></p>
+<p><strong>方法二：给 RabbitMQ 安装插件</strong></p>
+<p>安装完插件之后，在图形化页面设置交换机，将&#96;&#96;type<code>选择为插件，然后在下面的</code>Arguments<code>那绑定交换机的转发模式：</code>x-delayed-type<code>=</code>direct&#96;</p>
+<p>延迟队列的设置同样是在后置处理器上设置的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 得到后置处理器</span><br><span class="hljs-type">MessagePostProcessor</span> <span class="hljs-variable">postProcessor</span> <span class="hljs-operator">=</span> message -&gt; &#123;<br>	<span class="hljs-comment">// 设置消息过期时间，并传入 x-delayc 参数作为延迟队列</span><br>	message.getMessageProperties().setHeader(<span class="hljs-string">&quot;x-delat&quot;</span>,<span class="hljs-string">&quot;10000&quot;</span>);<br>	<span class="hljs-keyword">return</span> message;<br>&#125;<br><span class="hljs-comment">// 发送消息</span><br>rabbitTemplate.convertAndSend(<span class="hljs-string">&quot;交换机名称&quot;</span>,<span class="hljs-string">&quot;转发路由&quot;</span>,<span class="hljs-string">&quot;消息内容&quot;</span>,<span class="hljs-string">&quot;后置处理器&quot;</span>);<br></code></pre></td></tr></table></figure>
+
+<h2 id="RabbitMQ-事务"><a href="#RabbitMQ-事务" class="headerlink" title="RabbitMQ 事务"></a>RabbitMQ 事务</h2><p>RabbitMQ事务作用非常局限，通常来说，生产端发送消息后，会先进入缓存，而事务控制的就是缓存，如果中途发生了异常，则会回滚缓存里面的内容。为什么说局限呢，因为即使不回滚缓存，缓存发送到交换机时，也可能导致消息发送失败，比如中途网络断开，或者交换机突然宕机了。</p>
+<p>开启事务的话，需要在生产端上加入该注解</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Transactional</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="RabbitMQ-惰性队列"><a href="#RabbitMQ-惰性队列" class="headerlink" title="RabbitMQ 惰性队列"></a>RabbitMQ 惰性队列</h2><p>默认就是惰性队列</p>
+<p>先讲诉一下队列持久化</p>
+<p><strong>什么时候会将队列里面的消息进行持久化呢？</strong></p>
+<p>并不是当消息一进入队列的时候就进行持久化，而是当队列消息<del>满了</del>（大概百分之70~80）的时候就会进行队列持久化</p>
+<p>或者当队列要要关闭时，才会进行持久化，在持久化时。消息的存入操作会被阻塞</p>
+<p><strong>所谓的惰性队列就是持久化的时机：当服务器空闲时，就进行持久化</strong></p>
+<h2 id="RabbitMQ-优先级队列"><a href="#RabbitMQ-优先级队列" class="headerlink" title="RabbitMQ 优先级队列"></a>RabbitMQ 优先级队列</h2><p>RabbitMQ允许我们使用一个正整数给消息设定优先级</p>
+<p>消息的优先级数值取值范围:1~255</p>
+<p>RabbitMQ官网建议在1~5之间设置消息的优先级(优先级越高，占用CPU、<br>内存等资源越多)</p>
+<p><strong>关于优先级的设置，同样也是需要使用后置处理器来操作</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 得到后置处理器</span><br><span class="hljs-type">MessagePostProcessor</span> <span class="hljs-variable">postProcessor</span> <span class="hljs-operator">=</span> message -&gt; &#123;<br>	<span class="hljs-comment">// 设置优先级</span><br>	message.getMessageProperties().setPriority(<span class="hljs-number">2</span>);<br>	<span class="hljs-keyword">return</span> message;<br>&#125;<br><span class="hljs-comment">// 发送消息</span><br>rabbitTemplate.convertAndSend(<span class="hljs-string">&quot;交换机名称&quot;</span>,<span class="hljs-string">&quot;转发路由&quot;</span>,<span class="hljs-string">&quot;消息内容&quot;</span>,<span class="hljs-string">&quot;后置处理器&quot;</span>);<br></code></pre></td></tr></table></figure>
 
                 
               </div>
@@ -356,7 +513,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>更新于</div>
-          <div>2024年6月3日</div>
+          <div>2024年6月6日</div>
         </div>
       
       
@@ -364,14 +521,7 @@
           <div>许可协议</div>
           <div>
             
-              
-              
-                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
-                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
-                    <i class="iconfont icon-by"></i>
-                  </span>
-                </a>
-              
+              BY - SA
             
           </div>
         </div>
